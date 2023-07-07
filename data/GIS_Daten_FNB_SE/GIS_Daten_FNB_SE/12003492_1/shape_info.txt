@@ -1,0 +1,87 @@
+Dataset: gis (Gis)
+
+Collection: fg_flb_la (FG Leitungsabschnitt)
+
+ Shapefile: Gis FG Leitungsabschnitt Stationierungslinie (Bauphase)
+  xtrid (xtrid) : XTRID
+  ad_vorgaenge_id (AD Vorgänge ID) : AD_VORGAEN
+  abnahme_am (Abnahme am) : ABNAHME_AM
+  abnahme_durch (Abnahme durch) : ABNAHME_DU
+  abschnittsname (Abschnitt Name) : ABSCHNITT_
+  abschnittstyp (Abschnittstyp) : ABSCHNITTS
+  ad_vorgaenge (Ad Vorgänge) : AD_VORGAE1
+  fg_flb_armatur_gruppe (Armaturengruppe unused) : ARMATURENG
+  execution_quality (Ausführungsqualität) : AUSFUEHRUN
+  execution_quality_q (Ausführungsqualität, Qualität) : AUSFUEHRU1
+  auskunftspflicht (Auskunftsplicht) : AUSKUNFTSP
+  nominal_pressure_q (Auslegungsdruck - Güte) : AUSLEGUNGS
+  aussendurchmesser (Außendurchmesser) : AUSSENDURC
+  bauausfuehrung (Bauausführung) : BAUAUSFUEH
+  baujahr (Baujahr) : BAUJAHR
+  bemerkung (Bemerkung) : BEMERKUNG
+  fx_beteiligung (Beteiligung(en)) : BETEILIGUN
+  betreiber (Betreiber) : BETREIBER
+  betriebsaufsicht (Betriebsaufsicht) : BETRIEBSAU
+  operating_pressure_q (Betriebsdruck - Güte) : BETRIEBSDR
+  dvs_id (DVS ID) : DVS_ID
+  erfassungsart (Erfassungsart) : ERFASSUNGS
+  fg_leitung (FG_LEITUNG) : FG_LEITUNG
+  fsa (FSA) : FSA
+  fg_flb_armatur_gruppe_id (Fg Flb Armatur Gruppe Id) : FG_FLB_ARM
+  fg_flb_leitung_id (Fg Flb Leitung Id) : FG_FLB_LEI
+  fg_flb_speicher_id (Fg Flb Speicher Id) : FG_FLB_SPE
+  fg_flb_station_id (Fg Flb Station Id) : FG_FLB_STA
+  flussrichtung (Flussrichtung) : FLUSSRICHT
+  inhalt (Inhalt) : INHALT
+  inhalt_abschnitt (Inhalt Abschnitt) : INHALT_ABS
+  fx_id_laengen (Innendurchmesser Längen) : INNENDURCH
+  kabellage (Kabellage) : KABELLAGE
+  beschriftung (Kennz. Beschriftung) : KENNZ__BES
+  beschriftung_25 (Kennz. TK25 Beschriftung) : KENNZ__TK2
+  fx_kostenstelle (Kostenstelle(n)) : KOSTENSTEL
+  fg_flb_leitung (Leitung Nr.) : LEITUNG_NR
+  leitung_leitungsname (Leitung/Standort/UGS Name) : LEITUNG_ST
+  leitung_leitungs_nr (Leitung/Standort/UGS Nr.) : LEITUNG_S1
+  fg_leitung_name (Leitungs Name) : LEITUNGS_N
+  fg_leitung_nr (Leitungs Nr.) : LEITUNGS_1
+  leitungstyp (Leitungstyp) : LEITUNGSTY
+  mop_old_change (Letzte MOP-Änderung) : LETZTE_MOP
+  laenge_abschnitt (Länge Abschnitt) : LAENGE_ABS
+  l_abschnitt_gis (Länge Abschnitt GIS) : LAENGE_AB1
+  l_abschnitt_rohr (Länge Abschnitt Rohr) : LAENGE_AB2
+  betriebsdruck (MOP) : MOP
+  mop_old (MOP vor Änderung) : MOP_VOR_AE
+  marktgebiet (Marktgebiet) : MARKTGEBIE
+  medium (Medium) : MEDIUM
+  medium_q (Medium - Güte) : MEDIUM___G
+  druckstufe (Nenndruck (DP)) : NENNDRUCK_
+  nennweite_str (Nennweite) : NENNWEITE
+  nominal_width_q (Nennweite - Güte) : NENNWEITE_
+  projekt_nr (Projekt Nr.) : PROJEKT_NR
+  schutzstreifenbreite (Schutzstreifenbreite) : SCHUTZSTRE
+  class (Schutzstreifentyp) : SCHUTZSTR1
+  class_q (Schutzstreifentyp - Güte) : SCHUTZSTR2
+  weld_quality (Schweißnahtqualität) : SCHWEISSNA
+  weld_quality_q (Schweißnahtqualität - Güte) : SCHWEISSN1
+  fg_flb_station (Standort Name) : STANDORT_N
+  status (Status) : STATUS
+  typ (TYP) : TYP
+  teilnetz (Teilnetz) : TEILNETZ
+  fg_flb_speicher (Untergrundspeicher) : UNTERGRUND
+  verordnung (Verordnung) : VERORDNUNG
+  wanddicke (Wanddicke) : WANDDICKE
+  aufsichtsbehoerde (Wartungsfirma) : WARTUNGSFI
+  zulassungs_nr (Zulassungsnummer) : ZULASSUNGS
+  erfasst_am (erfaßt am) : ERFASST_AM
+  erfasst_von (erfaßt von) : ERFASST_VO
+  geaendert_am (geändert am) : GEAENDERT_
+  geaendert_von (geändert von) : GEAENDERT1
+  id (id) : ID
+  innere_betriebsfuehrung_netz (innere Betriebsführung (BB)) : INNERE_BET
+  innere_betriebsfuehrung (innere Betriebsführung (Meister)) : INNERE_BE1
+  molchbar (molchbar ?) : MOLCHBAR__
+  rwo_id (rwo_id) : RWO_ID
+  sap_id (techn. ID) : TECHN__ID
+  text_id (text_id) : TEXT_ID
+  aeussere_betriebsfuehrung (äußere Betriebsführung) : AEUSSERE_B
+
