@@ -64,27 +64,35 @@ begin
     investment_horizon = 10
     pipeline_cost_per_km = 0.3  #(capex + opex, depends on diameter) #M€
     total_capex = 1000 - new_pipeline_length[port_dict["Wilhelmshaven"]]*pipeline_cost_per_km*fsru_per_port[port_dict["Wilhelmshaven"]]
-    port_capex = fill(sum(total_capex/investment_horizon/(1 + (1-γ))^t for t in 1:investment_horizon), length(periods)) #[sum((960/(length(periods)-t+1))*(γ^(k-t)) for k in periods if k >= t) for t in periods] #net present value of capex in t
+    port_capex = fill(sum(total_capex/investment_horizon/(1 + (1-γ))^t for t in 1:investment_horizon), length(periods))
     port_opex = 0.02*total_capex #opex per fsru in use
     #FSRUs
     fsru_cap = Dict(fsru_set .=> 5) #bcm per year
     #all
     total_supply = sum(values(countries_supply))
     ##Demand
+    if DEMAND == "Ours"
+        TOTAL_DEMAND = range(86.7,0.,length(2022:2050))[2:end]
+    elseif DEMAND == "NZE"
+        TOTAL_DEMAND = [[(812+855)/2, 812, (794+812)/2]; range(794,582,length(2026:2030)); range(582,0.,length(2030:2050))[2:end]]*0.1
+    elseif DEMAND == "DE Gov"
+        TOTAL_DEMAND = [[86.0, 85.0, 82.0, 80.3, 78.7, 77.1, 75.5]; range(74.1, 0.,length(2030:2050))]
+    else 
+        error("Invalid DEMAND parameter \"$DEMAND\"")
+    end
     #export
     countries_demand = Dict("BE" => 0., "AT" => 8.03, "LU" => 0., "CZ" => 29.57, "CH" => 3.36, "FR" => 1.37, "PL" => 3.76, "FI" => 0., "DK" => 2.17, "NL" => 2.77) #bcm3 per year 
     total_export = sum(values(countries_demand))                                                  
     #domestic
-    TOTAL_DEMAND = 86.7 #(2022)
-    total_domestic_demand = 0.59*TOTAL_DEMAND #bcm3 per year
-    PERCENTAGE_SATISFIED = sum(get_prop(g, n, :gdp_percentage) for n in domestic_set)
-    nodal_domestic_demand = Dict(n => get_prop(g, n, :gdp_percentage)*total_domestic_demand*1/PERCENTAGE_SATISFIED for n in domestic_set)
+    total_domestic_demand = 0.59.*TOTAL_DEMAND #bcm3 per year
+    TOT = sum(get_prop(g, n, :gdp_percentage) for n in domestic_set)
+    nodal_domestic_demand = Dict((n,t) => get_prop(g, n, :gdp_percentage)*total_domestic_demand[t]*1/TOT for n in domestic_set for t in 1:length(periods))
     #industrial
-    total_industrial_demand = 0.41*TOTAL_DEMAND #bcm3 per year
-    nodal_industrial_demand = Dict(n => get_prop(g, n, :demand_percentage)*total_industrial_demand for n in consumers_set)
+    total_industrial_demand = 0.41.*TOTAL_DEMAND #bcm3 per year
+    nodal_industrial_demand = Dict((n,t) => get_prop(g, n, :demand_percentage)*total_industrial_demand[t] for n in consumers_set for t in 1:length(periods))
     #all demand 
     nodal_demand = merge(nodal_domestic_demand, nodal_industrial_demand)
-    println("total supply (imports) = $total_supply\ntotal demand = $TOTAL_DEMAND\ntotal exports = $total_export\nleaving ", TOTAL_DEMAND + total_export - total_supply, " of capacity needed")
+    println("2022: total supply (imports) = $total_supply\ntotal demand = $(TOTAL_DEMAND[1])\ntotal exports = $total_export\nleaving ", TOTAL_DEMAND[1] + total_export - total_supply, " of capacity needed")
 end
 ##Model
 begin
@@ -101,10 +109,10 @@ begin
     @constraints model begin
         #demand satisfaction and flow conservation
         c_demand_flow[node in setdiff(demand_nodes_set, port_set), t in periods],
-            sum(arc_flow[(src, node),t] for src in inneighbors(g, node)) == sum(arc_flow[(node,dst),t] for dst in outneighbors(g, node)) + nodal_demand[node]*demand_multiplier[t]
+            sum(arc_flow[(src, node),t] for src in inneighbors(g, node)) == sum(arc_flow[(node,dst),t] for dst in outneighbors(g, node)) + nodal_demand[(node,t)]
         #demand satisfaction and flow conservation at ports
         c_demand_flow_port[node in port_set,t in periods],
-                fsru_flow[node,t] + sum(arc_flow[(src, node),t] for src in inneighbors(g, node)) == sum(arc_flow[(node,dst),t] for dst in outneighbors(g, node)) + nodal_demand[node]*demand_multiplier[t]
+                fsru_flow[node,t] + sum(arc_flow[(src, node),t] for src in inneighbors(g, node)) == sum(arc_flow[(node,dst),t] for dst in outneighbors(g, node)) + nodal_demand[(node,t)]
         #fsru port capacity
         c_fsru_port_capacity[p in port_set,t in periods],
             fsru_flow[p,t] <= sum(assign_fsru_to_port[p, f, t]*fsru_cap[f] for f in fsru_set)
@@ -139,11 +147,16 @@ begin
         c_upgrading[p in port_set, t in periods],
             port_upgraded[p,t] <= sum(port_upgrade[p,k] for k in 1:t)
 
-        port_upgrade[port_dict["Wilhelmshaven"],1] == 1
-        port_upgrade[port_dict["Brunsbüttel"],1] == 1
-        port_upgrade[port_dict["Lubmin"],1] == 1
-        port_upgrade[port_dict["Stade"],2] == 1
-        port_upgrade[port_dict["Mukran"],2] == 1
+            
+    end
+    if BROWNFIELD 
+        @constraints model begin
+            port_upgrade[port_dict["Wilhelmshaven"],1] == 1
+            port_upgrade[port_dict["Brunsbüttel"],1] == 1
+            port_upgrade[port_dict["Lubmin"],1] == 1
+            port_upgrade[port_dict["Stade"],2] == 1
+            port_upgrade[port_dict["Mukran"],2] == 1
+        end
     end
     @expression(model, capex_cost[t in periods], sum(port_upgrade[p,t]*port_capex[t] for p in port_set))
     @expression(model, opex_cost[t in periods], sum(assign_fsru_to_port[p,f,t]*port_opex for p in port_set, f in fsru_set))
@@ -186,6 +199,7 @@ println("\nFSRU imports:")
 for (c,n) in port_dict
     println(c*"($n)" => round.(value.(fsru_flow)[n,:], digits =2)')
 end
+
 
 println("capex: ", value(sum(capex_cost)) + value(sum(pipeline_construction_cost)))
 println("opex: ", value(sum(opex_cost)))

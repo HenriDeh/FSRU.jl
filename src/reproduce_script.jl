@@ -1,9 +1,12 @@
 using Pkg
-cd(@__DIR__)
+cd(joinpath(@__DIR__, ".."))
 Pkg.activate(".")
 Pkg.instantiate()
 
-include("model_greenfield.jl")
+DEMAND = "Ours" # Change to "NZE" or "DE Gov" to test different scenarios
+BROWNFIELD = false
+include("run_model.jl")
 include("plotting_greenfield.jl")
-include("model_brownfield.jl")
+BROWNFIELD = true
+include("run_model.jl")
 include("plotting_brownfield.jl")
