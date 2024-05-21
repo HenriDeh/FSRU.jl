@@ -4,7 +4,7 @@ GLMakie.activate!(inline=false)
 
 function map_network(g, consumers_dict, domestic_dict, port_nodes, import_dict, export_dict, port_coordinates; highlight_nodes = Int[], highlight_arcs = Tuple{Int,Int}[])
     polys = [c.geometry for c in GeoJSON.read(read("data/DE_districts.geojson"))] 
-    f = Figure(resolution = (1440,1440));
+    f = Figure(size = (1440,1440));
     ax = GeoAxis(f[1,1];  limits = ((5,16), (47,56)), yrectzoom = false, xrectzoom = false, dest = "+proj=merc");
     for poly in polys
         de = poly!(ax, GeoMakie.geo2basic(poly);strokewidth = 0.5, strokecolor = :black)
