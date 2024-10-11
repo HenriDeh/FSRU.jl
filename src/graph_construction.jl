@@ -25,7 +25,7 @@ function detect_islands(g)
 end
 
 ##Loading and preprocessing
-function create_graph(ports_coordinates)
+function create_graph(ports_coordinates; silent = false)
     begin #load data
         nuts_fc = GeoJSON.read(read("data/NUTS_LB_2021_4326.geojson"))
         nuts_dict = Dict(f.NUTS_ID => f.geometry for f in nuts_fc)
@@ -35,6 +35,13 @@ function create_graph(ports_coordinates)
         for n in nodes_fc
             n.country_code == "FI" && continue #remove nordstream
             push!(nodes_df, [n.id, n.geometry.coordinates..., n.country_code, n.param["nuts_id_2"]])
+        end
+
+        prod_fc = GeoJSON.read(read("data/IGGIELGN_Productions.geojson"))
+        prod_df = DataFrame(node_id = String[], x_coor = Float64[], y_coor = Float64[], nuts_id_2 = String[], supply_capacity = Float64[])
+        for n in prod_fc
+            n.country_code == "DE" || continue
+            push!(prod_df, [n.id, n.geometry.coordinates..., n.param["nuts_id_2"], n.param["max_supply_M_m3_per_d"]])
         end
 
         arcs_fc = GeoJSON.read(read("data/IGGIELGN_PipeSegments.geojson"))
@@ -83,6 +90,10 @@ function create_graph(ports_coordinates)
     end
     nodes_df_DE = filter(nodes_df) do n
         n.country_code == "DE"
+    end
+    @transform! prod_df @byrow begin 
+        :x_coor = round(:x_coor, digits = 6)
+        :y_coor = round(:y_coor, digits = 6)
     end
     @transform! consumers_df @byrow begin 
         :x_coor = round(:x_coor, digits = 6)
@@ -135,21 +146,25 @@ function create_graph(ports_coordinates)
         inserted = add_edge!(g_i, from, to, Dict(:length_km => r.length_km))
     end
     islands = sort(detect_islands(g_i), by = length)[1:end-1]
-    rem_nodes = collect(reduce(union,islands))
-    if !isempty(islands)
-        @info "$(length(islands)) islands of $(length(rem_nodes)) disconnected nodes were removed. They respectively contained $(length.(islands)) nodes."
-        removed_nodes = nodes_df_DE[rem_nodes,:]
-        deleteat!(nodes_df_DE, sort(rem_nodes))
+    isolated_nodes = Set(reduce(union,islands))
+    if !isempty(islands) && !silent
+        @info "$(length(islands)) groups of $(length(isolated_nodes)) disconnected nodes were detected. They respectively contained $(length.(islands)) nodes. Virtual pipelines were added to reconnect the nodes."
+        # println(isolated_nodes)
     end
+    isolated_coo = Set([(nodes_df_DE.x_coor[n], nodes_df_DE.y_coor[n]) for n in isolated_nodes])
     empty!(coo_to_node)
-    ############### Nodes addition
+    empty!(isolated_nodes)
 
+    ############### Nodes addition
     for (id,r) in enumerate(eachrow(nodes_df_DE))
         @assert add_vertex!(g, Dict(:node_number => id, :node_id => r.node_id, :coordinates => (r.x_coor, r.y_coor), :country => r.country_code, :nuts2 => r.nuts_id_2))
         if (r.x_coor, r.y_coor) in keys(coo_to_node)
             @warn "Duplicate nodes at identical coordinates"
         end
         push!(coo_to_node, (r.x_coor, r.y_coor) => id)
+        if (r.x_coor, r.y_coor) in isolated_coo
+            push!(isolated_nodes, id)
+        end
     end
     unlinked_nuts = filter(n -> n ∉ nodes_df_DE.nuts_id_2, population_df.geo) 
     all(n -> n in population_df.geo, nodes_df_DE.nuts_id_2)
@@ -222,7 +237,6 @@ function create_graph(ports_coordinates)
             r.from_country = "NO"
         end
     end
-    @show keys(groupby(incoming_arcs, :from_country))
     for country_group in groupby(outgoing_arcs, :to_country)
         for group in groupby(country_group, [:to_x_coor, :to_y_coor])
             to_coordinates = (first(group).to_x_coor, first(group).to_y_coor)
@@ -275,6 +289,52 @@ function create_graph(ports_coordinates)
         push!(domestic_dict, coo => node_id)
     end 
 
+    # Adding missing pipelines
+    # 1. Add inputs
+    candidates = [n for n in vertices(g) if !isempty(inneighbors(g, n))]  # candidate links must have ability to supply
+    for node in isolated_nodes
+        if isempty(inneighbors(g, node))
+            pop!(isolated_nodes, node)
+            for neigh in all_neighbors(g, node)
+                if neigh in isolated_nodes
+                    pop!(isolated_nodes, neigh)
+                end
+            end
+            coor = get_prop(g, node, :coordinates)
+            candidates2 = filter(n -> n ∉ all_neighbors(g, node), candidates) # candidate links must not already be neighbors
+            nn = coo_to_node[only(k_nearest_nodes(coor, [get_prop(g, c, :coordinates) for c in candidates2], 1))]
+            dist = Distances.euclidean(coor, get_prop(g, nn, :coordinates))
+            add_edge!(g, nn, node, Dict(:length_km => dist, :capacity_Mm3_per_d => 100.0, :is_bidirectional => false))
+        end
+    end
+    # 2. Add outputs if node already had input
+    candidates = [n for n in vertices(g) if !isempty(outneighbors(g, n))]  # candidate links must have ability to distribute their input
+    for node in isolated_nodes
+        if isempty(outneighbors(g, node))
+            pop!(isolated_nodes, node)
+            for neigh in all_neighbors(g, node)
+                if neigh in isolated_nodes
+                    pop!(isolated_nodes, neigh)
+                end
+            end
+            coor = get_prop(g, node, :coordinates)
+            candidates2 = filter(n -> n ∉ all_neighbors(g, node), candidates) # candidate links must not already be neighbors
+            nn = coo_to_node[only(k_nearest_nodes(coor, [get_prop(g, c, :coordinates) for c in candidates2], 1))]
+            dist = Distances.euclidean(coor, get_prop(g, nn, :coordinates))
+            add_edge!(g, node, nn, Dict(:length_km => dist, :capacity_Mm3_per_d => 100.0, :is_bidirectional => false))
+        end
+    end
+    # 3. Connect islands with bidirectional intraconnectivity by connecting each node to its closest neighbor 
+    candidates = [n for n in vertices(g) if n ∉ (isolated_nodes)]  # candidate links must be external.
+    for node in isolated_nodes
+        pop!(isolated_nodes, node)
+        coor = get_prop(g, node, :coordinates)
+        nn = coo_to_node[only(k_nearest_nodes(coor, [get_prop(g, c, :coordinates) for c in candidates], 1))]
+        dist = Distances.euclidean(coor, get_prop(g, nn, :coordinates))
+        add_edge!(g, nn, node, Dict(:length_km => dist, :capacity_Mm3_per_d => 100.0, :is_bidirectional => true))
+        add_edge!(g, node, nn, Dict(:length_km => dist, :capacity_Mm3_per_d => 100.0, :is_bidirectional => true))
+    end
+
     unatainables = Set{Int}()
     for i in union(Set(values(domestic_dict)), Set(values(consumers_dict)))
         for node in values(import_nodes)
@@ -297,7 +357,7 @@ function create_graph(ports_coordinates)
             end
         end
     end
-    if !isempty(unatainables)
+    if !isempty(unatainables) && !silent
         @info "$(length(unatainables)) nodes were not atainables by at least two import node. $artificial_arcs outgoing artificial arcs were added."
     end
 
@@ -308,21 +368,41 @@ function create_graph(ports_coordinates)
     for r in eachrow(domestic_df)
         coo = (r.x_coor, r.y_coor)
         node_id = coo_to_node[coo]
-        incapacity = sum(get_prop(g, n, node_id, :capacity_Mm3_per_d) for n in inneighbors(g, node_id))
+        if isempty(inneighbors(g, node_id))
+            incapacity = 0.
+        else
+            incapacity = sum(get_prop(g, n, node_id, :capacity_Mm3_per_d) for n in inneighbors(g, node_id))
+        end
         setindex!(nuts_incapacities, get!(nuts_incapacities, r.nuts_id_2, 0.) + incapacity, r.nuts_id_2)
         push!(domestic_dict, coo => node_id)
     end
     for r in eachrow(domestic_df)        
         coo = (r.x_coor, r.y_coor)
         node_id = coo_to_node[coo]
-        incapacity = sum(get_prop(g, n, node_id, :capacity_Mm3_per_d) for n in inneighbors(g, node_id))
+        if isempty(inneighbors(g, node_id))
+            incapacity = 0.
+        else
+            incapacity = sum(get_prop(g, n, node_id, :capacity_Mm3_per_d) for n in inneighbors(g, node_id))
+        end
         node_nut_proportion = incapacity / nuts_incapacities[r.nuts_id_2]
         nut_proportion = r.nuts_gdp / TOTAL_GDP
         set_props!(g, node_id, Dict(:gdp_percentage => nut_proportion*node_nut_proportion))
     end
+
+    ######### Domestic production
+    producers_dict = Dict{Tuple{Float64,Float64}, Int}()
+    total_prod_capacity = sum(prod_df.supply_capacity)
+    for r in eachrow(prod_df)
+        coo = (r.x_coor, r.y_coor)
+        node_id = coo_to_node[coo]
+        @assert coo in keys(domestic_dict)
+        push!(producers_dict, coo => node_id)
+        prod_share = r.supply_capacity/total_prod_capacity
+        set_props!(g, node_id, Dict(:production_share => prod_share))
+    end
     
     ######## Unrepresented nuts
-    if !isempty(unlinked_nuts) 
+    if !isempty(unlinked_nuts) && !silent
         @info "The following nuts2 had no nodes and had their demand assigned to nearest neighbours: $(unlinked_nuts)"
     end
     for nut in unlinked_nuts
@@ -339,5 +419,5 @@ function create_graph(ports_coordinates)
             set_prop!(g, node_id, :gdp_percentage, current_percentage + incapacity/total_neigh_incapacity*nut_proportion) #add the unlinked percentage to old percentage
         end
     end
-    return g, consumers_dict, domestic_dict, port_nodes, import_nodes, export_nodes
+    return g, consumers_dict, domestic_dict, port_nodes, import_nodes, export_nodes, producers_dict
 end
