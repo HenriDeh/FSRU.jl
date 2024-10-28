@@ -78,7 +78,7 @@ begin
     #all
     total_supply = sum(first.(values(countries_supply)))
     ##Demand
-    if DEMAND == "Lin"
+    if DEMAND == "LIN"
         TOTAL_DEMAND = range(86.7,0.,length(2022:2050))[2:end]
     elseif DEMAND == "NZE"
         forecast = [[(812+855)/2, 812, (794+812)/2]; range(794,582,length(2026:2030))] #23-30

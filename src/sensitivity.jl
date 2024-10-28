@@ -1,6 +1,6 @@
 SILENT = true
 # Run base values
-DEMAND = "Lin"
+DEMAND = "LIN"
 FSRU_USED = true  
 BROWNFIELD = false
 RUSSIA = false

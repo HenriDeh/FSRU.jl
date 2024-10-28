@@ -79,6 +79,24 @@ if scenario_num == 6
     display(ffsru)
     save("fsru_imports.png", ffsru)
 end
-# if scenario_num == 2
-#     save("fsru_imports_appendix.png", fappend)
-# end
+
+## Investment profiles
+if scenario_num == 1
+    capexes = Dict(scenario_name => value(sum(capex_cost)))
+    opexes = Dict(scenario_name => value(sum(opex_cost)))
+end
+if scenario_num != 5
+    capexes[scenario_name] = value(sum(capex_cost))
+    opexes[scenario_name] = value(sum(opex_cost))
+end
+if scenario_num == 6
+    fscatter = Figure(size = (600,600));
+    axscatter = Axis(fscatter[1,1], title = "Expenditure profiles", ylabel = "Opex (M€)", xlabel = "Capex (M€)")
+    scenarios = collect(keys(capexes))
+    scatter!(axscatter, [capexes[s] for s in scenarios], [opexes[s] for s in scenarios], color = :black)
+    for s in scenarios
+        text!(axscatter, (capexes[s], opexes[s]), text = s, align = (:center, :bottom), offset = (0, 5))
+    end
+    limits!(axscatter, (1000,1800), (1000, 7000))
+    fscatter
+end

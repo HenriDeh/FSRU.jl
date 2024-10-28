@@ -45,39 +45,39 @@ if !SILENT
     value.(nodal_production)
 
     format_lat(x) = format(Int(round(value(x))), commas = true)
-    cap = format_lat(sum(capex_cost))
-    op = format_lat(sum(opex_cost))
+    cap = format_lat(sum(capex_cost[t]/r^(t-1) for t in periods))
+    op = format_lat(sum(opex_cost[t]/r^(t-1) for t in periods))
     println("capex: ", cap)
     println("opex: ", op)
 
-    fsruimp = format_lat(sum(fsru_price_cost/price_fsru))
-    fsrucost = format_lat(sum(fsru_price_cost))
+    fsruimp = format_lat(sum(fsru_price_cost[t]/r^(t-1)/price_fsru for t in periods))
+    fsrucost = format_lat(sum(fsru_price_cost[t]/r^(t-1) for t in periods))
     println("FSRU imports: ", fsruimp," ", fsrucost)
 
     ttfexp = sum(sum(import_flow[n,t] for (c, nodes) in import_countries_set for n in nodes if c in ("BE","NL","FR","CH")) for t in periods)
     ttfimp = format_lat(ttfexp)
-    ttfcostexp = sum(r^t*sum(country_price[c][t]*import_flow[n,t] for (c, nodes) in import_countries_set for n in nodes if c in ("BE","NL","FR","CH")) for t in periods)
+    ttfcostexp = sum(sum(country_price[c][t]*import_flow[n,t] for (c, nodes) in import_countries_set for n in nodes if c in ("BE","NL","FR","CH")) for t in periods)
     ttfcost = format_lat(ttfcostexp)
     println("TTF imports: ", ttfimp," ", ttfcost)
 
     hhexp = sum(sum(import_flow[n,t] for (c, nodes) in import_countries_set for n in nodes if c in ("NO","DK")) for t in periods)
     hhimp = format_lat(hhexp)
-    hhcostexp = sum(r^t*sum(country_price[c][t]*import_flow[n,t] for (c, nodes) in import_countries_set for n in nodes if c in ("NO","DK")) for t in periods)
+    hhcostexp = sum(sum(country_price[c][t]*import_flow[n,t] for (c, nodes) in import_countries_set for n in nodes if c in ("NO","DK")) for t in periods)
     hhcost = format_lat(hhcostexp)
     println("HH imports: ", hhimp," ", hhcost)
 
     transitexp = sum(sum(import_flow[n,t] for (c, nodes) in import_countries_set for n in nodes if c in ("AT","CZ","FI","PL")) for t in periods)
     transitimp = format_lat(transitexp)
-    transitcostexp = sum(r^t*sum(country_price[c][t]*import_flow[n,t] for (c, nodes) in import_countries_set for n in nodes if c in ("AT","CZ","FI","PL")) for t in periods)
+    transitcostexp = sum(sum(country_price[c][t]*import_flow[n,t] for (c, nodes) in import_countries_set for n in nodes if c in ("AT","CZ","FI","PL")) for t in periods)
     transitcost = format_lat(transitcostexp)
     println("Transit imports: ", transitimp," ", transitcost)
 
     domexp = sum(sum(nodal_production[n, t] for n in producers_set) for t in periods)
-    domcostexp = sum(domestic_price_cost)
+    domcostexp = sum(domestic_price_cost[t]/r^(t-1) for t in periods)
     domprod = format_lat(domexp)
     domprodcost = format_lat(domcostexp)
 
-    tot =  format_lat(total_cost)
+    tot =  format_lat(sum((capex_cost[t] + opex_cost[t] + fsru_price_cost[t] + import_price_cost[t] + domestic_price_cost[t])/r^(t-1) for t in periods))
     total_bcm = hhexp + ttfexp + sum(fsru_flow) + domexp + transitexp
     # ps = format_lat(pens*p)
     # ps_bcm = format_lat(pens)

@@ -4,9 +4,11 @@ authors = ["Henri Dehaybe <47037088+HenriDeh@users.noreply.github.com> and contr
 version = "0.1.0"
 
 [deps]
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
 Colors = "5ae59095-9a9b-59fe-a467-6f913c188581"
+Cthulhu = "f68482b8-f384-11e8-15f7-abe071a5a75f"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 DataFramesMeta = "1313f7d8-7da2-5740-9ea0-a2ca25f37964"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
@@ -23,11 +25,19 @@ JSONTables = "b9914132-a727-11e9-1322-f18e41205b0b"
 JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
 MetaGraphs = "626554b9-1ddb-594c-aa3c-2596fe9399a5"
 MultiObjectiveAlgorithms = "0327d340-17cd-11ea-3e99-2fd5d98cecda"
+Profile = "9abbd945-dff8-562f-b5e8-e1ebf5ef1b79"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+TestEnv = "1e6cf692-eddd-4d53-88a5-2d735e33781b"
 
 [compat]
+BenchmarkTools = "1.5.0"
+Cthulhu = "2.15.2"
+Profile = "1.11.0"
+Revise = "3.6.1"
+TestEnv = "1.102.0"
 julia = "1.8"
 
 [extras]

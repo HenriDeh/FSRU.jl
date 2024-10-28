@@ -83,11 +83,11 @@ begin
             @constraint model sum(port_upgrade[port_dict[city],:]) == 0
         end
     end
-    @expression(model, capex_cost[t in periods], r^t*sum(port_upgrade[p,t]*total_capex[p] for p in port_set))
-    @expression(model, opex_cost[t in periods], r^t*sum(assign_fsru_to_port[p, t]*port_opex[p] for p in port_set))
-    @expression(model, fsru_price_cost[t in periods], r^t*sum(fsru_flow[p,t] for p in port_set)*price_fsru)
-    @expression(model, import_price_cost[t in periods], r^t*sum(country_price[c][t]*import_flow[n,t] for c in keys(import_countries_set) for n in import_countries_set[c]))
-    @expression(model, domestic_price_cost[t in periods], r^t*sum(country_price["DE"][t]*nodal_production[n, t] for n in producers_set))
+    @expression(model, capex_cost[t in periods], r^(t-1)*sum(port_upgrade[p,t]*total_capex[p] for p in port_set))
+    @expression(model, opex_cost[t in periods], r^(t-1)*sum(assign_fsru_to_port[p, t]*port_opex[p] for p in port_set))
+    @expression(model, fsru_price_cost[t in periods], r^(t-1)*sum(fsru_flow[p,t] for p in port_set)*price_fsru)
+    @expression(model, import_price_cost[t in periods], r^(t-1)*sum(country_price[c][t]*import_flow[n,t] for c in keys(import_countries_set) for n in import_countries_set[c]))
+    @expression(model, domestic_price_cost[t in periods], r^(t-1)*sum(country_price["DE"][t]*nodal_production[n, t] for n in producers_set))
     @expression(model, total_cost, sum(capex_cost[t] + opex_cost[t] + fsru_price_cost[t] + import_price_cost[t] + domestic_price_cost[t] for t in periods))
     @expression(model, penalty, sum(arc_overcapacity[a,t]*arc_length[a] for a in arc_set for t in periods))
 end;

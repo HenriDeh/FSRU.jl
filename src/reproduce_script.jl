@@ -66,7 +66,7 @@ end
 
 begin
     scenario_num = 3
-    DEMAND = "Lin"
+    DEMAND = "LIN"
     FSRU_USED = true  
     BROWNFIELD = false
     RUSSIA = false
@@ -82,7 +82,7 @@ end
 
 begin
     scenario_num = 4
-    DEMAND = "Lin"
+    DEMAND = "LIN"
     FSRU_USED = true  
     BROWNFIELD = true
     RUSSIA = false
@@ -98,7 +98,7 @@ end
 
 begin
     scenario_num = 5
-    DEMAND = "Lin"
+    DEMAND = "LIN"
     FSRU_USED = false
     BROWNFIELD = false
     RUSSIA = false
@@ -114,7 +114,7 @@ end
 
 begin
     scenario_num = 6
-    DEMAND = "Lin"
+    DEMAND = "LIN"
     FSRU_USED = true
     BROWNFIELD = false
     RUSSIA = true
@@ -130,4 +130,4 @@ end
 
 println(gaps)
 
-include("sensitivity.jl")
+# include("sensitivity.jl") # uncomment to run sensitivity analysis, warning, takes several hours.
